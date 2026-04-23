@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng Nhập | QLSVNhom</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a237e; --primary-light: #3949ab; --accent: #00bcd4;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a237e 0%, #283593 50%, #0d47a1 100%);
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            position: relative; overflow: hidden;
+        }
+        body::before {
+            content: ''; position: absolute; inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+        .login-container {
+            background: #fff; border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.35);
+            width: 420px; overflow: hidden; position: relative; z-index: 1;
+        }
+        .login-header {
+            background: linear-gradient(135deg, var(--primary), #283593);
+            padding: 36px 32px 28px; text-align: center; color: #fff;
+        }
+        .login-header .icon {
+            width: 64px; height: 64px; background: rgba(255,255,255,.15);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; margin: 0 auto 14px; border: 2px solid rgba(255,255,255,.25);
+        }
+        .login-header h1 { font-size: 1.35rem; font-weight: 800; letter-spacing: .3px; }
+        .login-header p { font-size: .8rem; opacity: .75; margin-top: 4px; }
+        .login-body { padding: 32px; }
+        .security-tag {
+            display: flex; align-items: center; gap: 8px;
+            background: #e8f5e9; border-radius: 8px; padding: 10px 14px;
+            margin-bottom: 22px; font-size: .78rem; color: #2e7d32; font-weight: 600;
+        }
+        .security-tag i { color: #43a047; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label {
+            display: block; font-size: .78rem; font-weight: 700;
+            color: #444; margin-bottom: 6px; letter-spacing: .3px;
+        }
+        .input-wrap { position: relative; }
+        .input-wrap i {
+            position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+            color: #aaa; font-size: .9rem;
+        }
+        .input-wrap input {
+            width: 100%; padding: 11px 12px 11px 38px;
+            border: 1.5px solid #dde3f0; border-radius: 10px;
+            font-size: .9rem; transition: border-color .2s;
+            background: #fafbff;
+        }
+        .input-wrap input:focus {
+            outline: none; border-color: var(--primary-light);
+            background: #fff; box-shadow: 0 0 0 3px rgba(57,73,171,.1);
+        }
+        .error-msg {
+            background: #ffebee; color: #c62828;
+            border-left: 4px solid #e53935;
+            padding: 10px 14px; border-radius: 8px;
+            font-size: .82rem; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .btn-login {
+            width: 100%; padding: 13px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-light));
+            color: #fff; border: none; border-radius: 10px;
+            font-size: .95rem; font-weight: 700; cursor: pointer;
+            transition: all .2s; margin-top: 6px;
+            box-shadow: 0 4px 14px rgba(26,35,126,.3);
+        }
+        .btn-login:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(26,35,126,.4); }
+        .login-footer {
+            padding: 16px 32px 24px; text-align: center;
+            font-size: .75rem; color: #aaa; border-top: 1px solid #f0f4f8;
+        }
+        .hint { background: #f5f7ff; border-radius: 8px; padding: 12px 14px; margin-top: 16px; font-size: .76rem; color: #666; }
+        .hint strong { color: var(--primary); }
+    </style>
+</head>
+<body>
+<div class="login-container">
+    <div class="login-header">
+        <div class="icon">🎓</div>
+        <h1>QLSVNhom</h1>
+        <p>Hệ thống Quản lý Sinh viên - Thực hành số 3</p>
+    </div>
+    <div class="login-body">
+        <div class="security-tag">
+            <i class="fa fa-shield-alt"></i>
+            Mật khẩu mã hóa SHA1 · Lương & Điểm mã hóa RSA-512
+        </div>
+        {% if error %}
+        <div class="error-msg"><i class="fa fa-exclamation-triangle"></i> {{ error }}</div>
+        {% endif %}
+        <form method="POST">
+            <div class="form-group">
+                <label>MÃ NHÂN VIÊN</label>
+                <div class="input-wrap">
+                    <i class="fa fa-id-card"></i>
+                    <input type="text" name="manv" placeholder="VD: NV01" required autofocus>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>MẬT KHẨU</label>
+                <div class="input-wrap">
+                    <i class="fa fa-lock"></i>
+                    <input type="password" name="matkhau" placeholder="Nhập mật khẩu" required>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">
+                <i class="fa fa-sign-in-alt"></i> &nbsp; ĐĂNG NHẬP
+            </button>
+        </form>
+        <div class="hint">
+            💡 <strong>Tài khoản mẫu:</strong> Chạy script <code>03_test_data.sql</code> để tạo dữ liệu.
+            Sau đó đăng nhập với <strong>NV01 / abcd12</strong>
+        </div>
+    </div>
+    <div class="login-footer">Khoa CNTT · ĐH Khoa học Tự nhiên TP.HCM</div>
+</div>
+</body>
+</html>

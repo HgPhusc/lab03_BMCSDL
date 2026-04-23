@@ -1,0 +1,185 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý Sinh viên{% endblock %}
+{% block page_title %}Quản lý Sinh viên{% endblock %}
+{% block content %}
+<div class="security-info">
+    <i class="fa fa-info-circle"></i>
+    <p>Bạn chỉ có thể <strong>thêm, sửa, xóa</strong> sinh viên thuộc lớp do bạn phụ trách.
+    Lớp bạn quản lý: 
+    {% for lop in lop_quan_ly %}
+    <strong>{{ lop.MALOP }}</strong>{% if not loop.last %}, {% endif %}
+    {% endfor %}
+    </p>
+</div>
+
+<!-- CHỌN LỚP -->
+<div class="card" style="margin-bottom: 18px;">
+    <div class="card-body" style="padding: 16px 22px;">
+        <form method="GET" style="display: flex; align-items: center; gap: 14px;">
+            <label style="font-weight:700; font-size:.85rem; color:#444;">Chọn lớp:</label>
+            <select name="malop" onchange="this.form.submit()" style="padding:8px 14px; border:1.5px solid #dde3f0; border-radius:8px; font-size:.875rem;">
+                <option value="">-- Chọn lớp --</option>
+                {% for lop in lop_quan_ly %}
+                <option value="{{ lop.MALOP }}" {{ 'selected' if lop.MALOP == malop_selected }}>
+                    {{ lop.MALOP }} - {{ lop.TENLOP }}
+                </option>
+                {% endfor %}
+            </select>
+            {% if malop_selected %}
+            <button type="button" class="btn btn-primary" onclick="openModal('modal-them-sv')">
+                <i class="fa fa-plus"></i> Thêm sinh viên
+            </button>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+{% if malop_selected %}
+<div class="card">
+    <div class="card-header">
+        <h3>Sinh viên lớp {{ malop_selected }}</h3>
+        <span class="tag tag-blue">{{ sv_list|length }} sinh viên</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>MASV</th><th>HỌ TÊN</th><th>NGÀY SINH</th>
+                        <th>ĐỊA CHỈ</th><th>TÊN ĐN</th><th>THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for sv in sv_list %}
+                <tr>
+                    <td><span class="tag tag-green">{{ sv.MASV }}</span></td>
+                    <td><strong>{{ sv.HOTEN }}</strong></td>
+                    <td>{{ sv.NGAYSINH.strftime('%d/%m/%Y') if sv.NGAYSINH else '—' }}</td>
+                    <td>{{ sv.DIACHI or '—' }}</td>
+                    <td>{{ sv.TENDN }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline"
+                            onclick="editSV('{{ sv.MASV }}','{{ sv.HOTEN }}',
+                                '{{ sv.NGAYSINH.strftime('%Y-%m-%d') if sv.NGAYSINH else '' }}',
+                                '{{ sv.DIACHI or '' }}','{{ sv.MALOP }}','{{ sv.TENDN }}')">
+                            <i class="fa fa-edit"></i>
+                        </button>
+                        <form method="POST" action="/sinhvien/xoa" style="display:inline"
+                              onsubmit="return confirm('Xóa sinh viên {{ sv.MASV }}?')">
+                            <input type="hidden" name="masv" value="{{ sv.MASV }}">
+                            <input type="hidden" name="malop" value="{{ malop_selected }}">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" style="text-align:center; color:#aaa; padding:30px">Lớp chưa có sinh viên.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- MODAL THÊM SV -->
+<div id="modal-them-sv" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fa fa-user-plus" style="color:#1a237e"></i> Thêm sinh viên</h3>
+        <form method="POST" action="/sinhvien/them">
+            <input type="hidden" name="malop" value="{{ malop_selected }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>MÃ SV *</label>
+                    <input type="text" name="masv" required placeholder="VD: SV001">
+                </div>
+                <div class="form-group">
+                    <label>HỌ TÊN *</label>
+                    <input type="text" name="hoten" required placeholder="Nguyễn Văn A">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>NGÀY SINH</label>
+                    <input type="date" name="ngaysinh">
+                </div>
+                <div class="form-group">
+                    <label>ĐỊA CHỈ</label>
+                    <input type="text" name="diachi" placeholder="TP.HCM">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>TÊN ĐĂNG NHẬP *</label>
+                    <input type="text" name="tendn" required>
+                </div>
+                <div class="form-group">
+                    <label>MẬT KHẨU *</label>
+                    <input type="password" name="matkhau" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-them-sv')">Hủy</button>
+                <button type="submit" class="btn btn-success"><i class="fa fa-save"></i> Thêm</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL SỬA SV -->
+<div id="modal-sua-sv" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fa fa-edit" style="color:#1a237e"></i> Cập nhật sinh viên</h3>
+        <form method="POST" action="/sinhvien/sua">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>MÃ SV</label>
+                    <input type="text" id="e-masv" name="masv" readonly style="background:#f5f7ff">
+                </div>
+                <div class="form-group">
+                    <label>HỌ TÊN *</label>
+                    <input type="text" id="e-hoten" name="hoten" required>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>NGÀY SINH</label>
+                    <input type="date" id="e-ngaysinh" name="ngaysinh">
+                </div>
+                <div class="form-group">
+                    <label>ĐỊA CHỈ</label>
+                    <input type="text" id="e-diachi" name="diachi">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>LỚP</label>
+                    <input type="text" id="e-malop" name="malop" readonly style="background:#f5f7ff">
+                </div>
+                <div class="form-group">
+                    <label>TÊN ĐĂNG NHẬP</label>
+                    <input type="text" id="e-tendn" name="tendn">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-sua-sv')">Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editSV(masv, hoten, ngaysinh, diachi, malop, tendn) {
+    document.getElementById('e-masv').value = masv;
+    document.getElementById('e-hoten').value = hoten;
+    document.getElementById('e-ngaysinh').value = ngaysinh;
+    document.getElementById('e-diachi').value = diachi;
+    document.getElementById('e-malop').value = malop;
+    document.getElementById('e-tendn').value = tendn;
+    openModal('modal-sua-sv');
+}
+</script>
+{% endblock %}

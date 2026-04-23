@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Quản Lý Sinh Viên{% endblock %} | QLSVNhom</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1a237e;
+            --primary-light: #3949ab;
+            --accent: #00bcd4;
+            --success: #43a047;
+            --danger: #e53935;
+            --warning: #fb8c00;
+            --bg: #f0f4f8;
+            --sidebar-w: 240px;
+            --card-radius: 12px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: #222; }
+
+        /* SIDEBAR */
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: var(--sidebar-w);
+            background: linear-gradient(180deg, var(--primary) 0%, #283593 100%);
+            color: #fff; display: flex; flex-direction: column;
+            box-shadow: 4px 0 20px rgba(0,0,0,.25); z-index: 100;
+        }
+        .sidebar-logo {
+            padding: 28px 20px 20px;
+            border-bottom: 1px solid rgba(255,255,255,.15);
+        }
+        .sidebar-logo h2 { font-size: 1.1rem; font-weight: 700; letter-spacing: .5px; }
+        .sidebar-logo p { font-size: .72rem; opacity: .7; margin-top: 3px; }
+        .sidebar-user {
+            padding: 16px 20px;
+            background: rgba(255,255,255,.08);
+            border-bottom: 1px solid rgba(255,255,255,.1);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .sidebar-user .avatar {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: var(--accent); display: flex; align-items: center;
+            justify-content: center; font-weight: 700; font-size: .9rem;
+        }
+        .sidebar-user .info { flex: 1; min-width: 0; }
+        .sidebar-user .info .name { font-size: .85rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .sidebar-user .info .id { font-size: .7rem; opacity: .65; }
+        nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+        .nav-section { padding: 8px 20px 4px; font-size: .65rem; letter-spacing: 1.2px; opacity: .5; text-transform: uppercase; }
+        nav a {
+            display: flex; align-items: center; gap: 12px;
+            padding: 11px 20px; color: rgba(255,255,255,.8);
+            text-decoration: none; font-size: .87rem;
+            transition: all .2s; border-left: 3px solid transparent;
+        }
+        nav a:hover, nav a.active {
+            background: rgba(255,255,255,.12);
+            color: #fff; border-left-color: var(--accent);
+        }
+        nav a i { width: 18px; text-align: center; opacity: .85; }
+        .sidebar-logout {
+            padding: 16px 20px;
+            border-top: 1px solid rgba(255,255,255,.15);
+        }
+        .sidebar-logout a {
+            display: flex; align-items: center; gap: 10px;
+            color: rgba(255,255,255,.65); text-decoration: none;
+            font-size: .85rem; transition: color .2s;
+        }
+        .sidebar-logout a:hover { color: #ff8a80; }
+
+        /* MAIN */
+        .main { margin-left: var(--sidebar-w); min-height: 100vh; }
+        .topbar {
+            background: #fff; padding: 16px 28px;
+            border-bottom: 1px solid #e0e7ef;
+            display: flex; align-items: center; justify-content: space-between;
+            box-shadow: 0 1px 4px rgba(0,0,0,.06);
+        }
+        .topbar h1 { font-size: 1.15rem; font-weight: 700; color: var(--primary); }
+        .topbar .badge-lock {
+            display: flex; align-items: center; gap: 6px;
+            background: #e8f5e9; color: #2e7d32;
+            padding: 4px 12px; border-radius: 20px; font-size: .75rem; font-weight: 600;
+        }
+        .content { padding: 28px; }
+
+        /* FLASH MESSAGES */
+        .flash { padding: 12px 18px; border-radius: 8px; margin-bottom: 18px; font-size: .875rem; display: flex; align-items: center; gap: 10px; }
+        .flash.success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid var(--success); }
+        .flash.error { background: #ffebee; color: #c62828; border-left: 4px solid var(--danger); }
+
+        /* CARDS */
+        .card {
+            background: #fff; border-radius: var(--card-radius);
+            box-shadow: 0 2px 12px rgba(0,0,0,.07); overflow: hidden;
+        }
+        .card-header {
+            padding: 16px 22px;
+            border-bottom: 1px solid #f0f4f8;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .card-header h3 { font-size: .95rem; font-weight: 700; color: var(--primary); }
+        .card-body { padding: 22px; }
+
+        /* TABLE */
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: .875rem; }
+        thead th {
+            background: #f5f7ff; color: var(--primary);
+            padding: 11px 14px; text-align: left;
+            font-weight: 600; font-size: .78rem; letter-spacing: .4px;
+            border-bottom: 2px solid #e0e7ef;
+        }
+        tbody tr { border-bottom: 1px solid #f0f4f8; transition: background .15s; }
+        tbody tr:hover { background: #f8faff; }
+        tbody td { padding: 10px 14px; color: #444; }
+
+        /* BUTTONS */
+        .btn {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 8px 16px; border-radius: 8px; border: none;
+            font-size: .83rem; font-weight: 600; cursor: pointer;
+            transition: all .2s; text-decoration: none;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover { background: var(--primary-light); }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-success:hover { background: #388e3c; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover { background: #c62828; }
+        .btn-accent { background: var(--accent); color: #fff; }
+        .btn-accent:hover { background: #00acc1; }
+        .btn-sm { padding: 5px 10px; font-size: .76rem; border-radius: 6px; }
+        .btn-outline {
+            background: transparent; border: 1.5px solid var(--primary);
+            color: var(--primary);
+        }
+        .btn-outline:hover { background: var(--primary); color: #fff; }
+
+        /* FORMS */
+        .form-row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 14px; }
+        .form-group { flex: 1; min-width: 180px; }
+        .form-group label { display: block; font-size: .78rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+        .form-group input, .form-group select {
+            width: 100%; padding: 9px 12px;
+            border: 1.5px solid #d8e0ef; border-radius: 8px;
+            font-size: .875rem; transition: border-color .2s;
+            background: #fafbff;
+        }
+        .form-group input:focus, .form-group select:focus {
+            outline: none; border-color: var(--primary-light);
+            background: #fff;
+        }
+
+        /* STATS GRID */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-bottom: 28px; }
+        .stat-card {
+            background: #fff; border-radius: var(--card-radius);
+            padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,.06);
+            display: flex; align-items: center; gap: 16px;
+        }
+        .stat-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.3rem; color: #fff;
+        }
+        .stat-label { font-size: .73rem; color: #888; font-weight: 600; text-transform: uppercase; }
+        .stat-value { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+
+        /* MODAL */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,.45); z-index: 200;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: #fff; border-radius: 16px; padding: 28px;
+            width: 90%; max-width: 520px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.2);
+            animation: slideUp .2s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal h3 { font-size: 1.05rem; font-weight: 700; color: var(--primary); margin-bottom: 20px; }
+        .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+
+        /* TAGS */
+        .tag {
+            display: inline-block; padding: 2px 10px; border-radius: 20px;
+            font-size: .72rem; font-weight: 600;
+        }
+        .tag-blue { background: #e3f2fd; color: #1565c0; }
+        .tag-green { background: #e8f5e9; color: #2e7d32; }
+        .tag-lock { background: #fff3e0; color: #e65100; }
+
+        /* SECURITY BADGE */
+        .security-info {
+            background: linear-gradient(135deg, #e8f5e9, #f1f8e9);
+            border: 1px solid #a5d6a7; border-radius: 10px;
+            padding: 14px 18px; margin-bottom: 18px;
+            display: flex; align-items: flex-start; gap: 12px;
+        }
+        .security-info i { color: var(--success); font-size: 1.1rem; margin-top: 1px; }
+        .security-info p { font-size: .82rem; color: #2e7d32; line-height: 1.6; }
+        .security-info strong { font-weight: 700; }
+    </style>
+</head>
+<body>
+{% if session.get('manv') %}
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <h2>🎓 QLSVNhom</h2>
+        <p>Quản Lý Sinh Viên</p>
+    </div>
+    <div class="sidebar-user">
+        <div class="avatar">{{ session.hoten[0] if session.hoten else 'N' }}</div>
+        <div class="info">
+            <div class="name">{{ session.hoten }}</div>
+            <div class="id">{{ session.manv }}</div>
+        </div>
+    </div>
+    <nav>
+        <div class="nav-section">Tổng quan</div>
+        <a href="{{ url_for('dashboard') }}" class="{{ 'active' if request.endpoint == 'dashboard' }}">
+            <i class="fa fa-home"></i> Dashboard
+        </a>
+        <div class="nav-section">Quản lý</div>
+        <a href="{{ url_for('lop_list') }}" class="{{ 'active' if request.endpoint == 'lop_list' }}">
+            <i class="fa fa-chalkboard"></i> Quản lý Lớp học
+        </a>
+        <a href="{{ url_for('sv_list') }}" class="{{ 'active' if request.endpoint == 'sv_list' }}">
+            <i class="fa fa-user-graduate"></i> Quản lý Sinh viên
+        </a>
+        <a href="{{ url_for('bangdiem') }}" class="{{ 'active' if request.endpoint == 'bangdiem' }}">
+            <i class="fa fa-table"></i> Bảng điểm
+        </a>
+        <div class="nav-section">Tài khoản</div>
+        <a href="{{ url_for('nhanvien') }}" class="{{ 'active' if request.endpoint == 'nhanvien' }}">
+            <i class="fa fa-id-badge"></i> Thông tin cá nhân
+        </a>
+    </nav>
+    <div class="sidebar-logout">
+        <a href="{{ url_for('logout') }}"><i class="fa fa-sign-out-alt"></i> Đăng xuất</a>
+    </div>
+</div>
+{% endif %}
+
+<div class="main">
+    {% if session.get('manv') %}
+    <div class="topbar">
+        <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+        <div class="badge-lock"><i class="fa fa-lock"></i> RSA-512 Encrypted</div>
+    </div>
+    {% endif %}
+    <div class="{{ 'content' if session.get('manv') else '' }}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">
+            <i class="fa fa-{{ 'check-circle' if cat == 'success' else 'exclamation-circle' }}"></i>
+            {{ msg }}
+        </div>
+        {% endfor %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </div>
+</div>
+
+<script>
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+window.addEventListener('click', function(e) {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => {
+        if (e.target === m) m.classList.remove('open');
+    });
+});
+</script>
+</body>
+</html>

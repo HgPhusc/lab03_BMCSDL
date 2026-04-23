@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+{% block title %}Thông tin nhân viên{% endblock %}
+{% block page_title %}Thông tin cá nhân{% endblock %}
+{% block content %}
+<div class="security-info">
+    <i class="fa fa-shield-alt"></i>
+    <p>Lương được giải mã từ cơ sở dữ liệu sử dụng <strong>Private Key {{ session.pubkey }}</strong>
+    với mật khẩu của bạn. Dữ liệu lương trong DB được lưu ở dạng mã hóa <strong>RSA-512</strong>.</p>
+</div>
+
+{% if nhanvien %}
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="card">
+        <div class="card-header"><h3>👤 Thông tin nhân viên</h3></div>
+        <div class="card-body">
+            <table style="width:100%; font-size:.9rem;">
+                <tr style="border-bottom:1px solid #f0f4f8;">
+                    <td style="padding:10px 0; color:#888; width:40%">Mã nhân viên</td>
+                    <td><strong>{{ nhanvien.MANV }}</strong></td>
+                </tr>
+                <tr style="border-bottom:1px solid #f0f4f8;">
+                    <td style="padding:10px 0; color:#888">Họ tên</td>
+                    <td><strong>{{ nhanvien.HOTEN }}</strong></td>
+                </tr>
+                <tr style="border-bottom:1px solid #f0f4f8;">
+                    <td style="padding:10px 0; color:#888">Email</td>
+                    <td>{{ nhanvien.EMAIL or '—' }}</td>
+                </tr>
+                <tr style="border-bottom:1px solid #f0f4f8;">
+                    <td style="padding:10px 0; color:#888">Tên đăng nhập</td>
+                    <td>{{ session.tendn }}</td>
+                </tr>
+                <tr>
+                    <td style="padding:10px 0; color:#888">Public Key</td>
+                    <td><span class="tag tag-lock">{{ session.pubkey }}</span></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header"><h3>💰 Lương (đã giải mã)</h3></div>
+        <div class="card-body" style="text-align: center; padding: 36px;">
+            <div style="font-size:.75rem; color:#888; margin-bottom: 8px; text-transform:uppercase; letter-spacing:1px">
+                Lương cơ bản (RSA-512 decrypted)
+            </div>
+            <div style="font-size: 2.5rem; font-weight: 900; color: #1a237e;">
+                {{ '{:,.0f}'.format(nhanvien.LUONGCB|float) if nhanvien.LUONGCB else '???' }}
+            </div>
+            <div style="font-size:.9rem; color:#888; margin-top: 4px;">VNĐ</div>
+            <div style="margin-top: 20px; padding: 12px 16px; background: #f5f7ff; border-radius: 10px; font-size: .78rem; color: #555;">
+                <i class="fa fa-lock" style="color:#1a237e"></i>
+                Dữ liệu trong DB: <code>VARBINARY(MAX)</code> — mã hóa bằng AsymKey <strong>{{ session.pubkey }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card">
+    <div class="card-body" style="text-align:center; padding:40px; color:#aaa">
+        <i class="fa fa-exclamation-triangle" style="font-size:2rem; margin-bottom:12px; display:block"></i>
+        Không thể tải thông tin. Vui lòng thử lại.
+    </div>
+</div>
+{% endif %}
+{% endblock %}

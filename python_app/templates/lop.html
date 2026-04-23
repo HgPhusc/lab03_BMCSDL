@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% block title %}Quản lý Lớp học{% endblock %}
+{% block page_title %}Quản lý Lớp học{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: flex-end; margin-bottom: 18px;">
+    <button class="btn btn-primary" onclick="openModal('modal-them-lop')">
+        <i class="fa fa-plus"></i> Thêm lớp mới
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3><i class="fa fa-chalkboard" style="color:#1a237e"></i> Danh sách lớp học</h3>
+        <span class="tag tag-blue">{{ lop_list|length }} lớp</span>
+    </div>
+    <div class="card-body" style="padding: 0;">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>MÃ LỚP</th>
+                        <th>TÊN LỚP</th>
+                        <th>GVCN</th>
+                        <th>THAO TÁC</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for lop in lop_list %}
+                <tr>
+                    <td><span class="tag tag-blue">{{ lop.MALOP }}</span></td>
+                    <td><strong>{{ lop.TENLOP }}</strong></td>
+                    <td>{{ lop.MANV }} - {{ lop.HOTEN_GVCN or '—' }}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline"
+                            onclick="editLop('{{ lop.MALOP }}', '{{ lop.TENLOP }}', '{{ lop.MANV or '' }}')">
+                            <i class="fa fa-edit"></i> Sửa
+                        </button>
+                        <form method="POST" action="/lop/xoa" style="display:inline"
+                              onsubmit="return confirm('Xóa lớp {{ lop.MALOP }}?')">
+                            <input type="hidden" name="malop" value="{{ lop.MALOP }}">
+                            <button type="submit" class="btn btn-sm btn-danger">
+                                <i class="fa fa-trash"></i> Xóa
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" style="text-align:center; color:#aaa; padding: 30px;">Chưa có lớp nào.</td></tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL THÊM LỚP -->
+<div id="modal-them-lop" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fa fa-plus-circle" style="color:#1a237e"></i> Thêm lớp mới</h3>
+        <form method="POST" action="/lop/them">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>MÃ LỚP *</label>
+                    <input type="text" name="malop" placeholder="VD: L001" required>
+                </div>
+                <div class="form-group">
+                    <label>TÊN LỚP *</label>
+                    <input type="text" name="tenlop" placeholder="VD: Lớp CNTT 1" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>MÃ NHÂN VIÊN PHỤ TRÁCH</label>
+                <input type="text" name="manv" placeholder="VD: NV01">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-them-lop')">Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Lưu</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL SỬA LỚP -->
+<div id="modal-sua-lop" class="modal-overlay">
+    <div class="modal">
+        <h3><i class="fa fa-edit" style="color:#1a237e"></i> Cập nhật lớp</h3>
+        <form method="POST" action="/lop/sua">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>MÃ LỚP</label>
+                    <input type="text" id="edit-malop" name="malop" readonly style="background:#f5f7ff;">
+                </div>
+                <div class="form-group">
+                    <label>TÊN LỚP *</label>
+                    <input type="text" id="edit-tenlop" name="tenlop" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>MÃ NHÂN VIÊN PHỤ TRÁCH</label>
+                <input type="text" id="edit-manv" name="manv">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline" onclick="closeModal('modal-sua-lop')">Hủy</button>
+                <button type="submit" class="btn btn-primary"><i class="fa fa-save"></i> Cập nhật</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editLop(malop, tenlop, manv) {
+    document.getElementById('edit-malop').value = malop;
+    document.getElementById('edit-tenlop').value = tenlop;
+    document.getElementById('edit-manv').value = manv;
+    openModal('modal-sua-lop');
+}
+</script>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block title %}Bảng điểm{% endblock %}
+{% block page_title %}Nhập & Xem Bảng điểm{% endblock %}
+{% block content %}
+<div class="security-info">
+    <i class="fa fa-lock"></i>
+    <p>Điểm thi được mã hóa bằng <strong>Public Key {{ session.pubkey }}</strong> (RSA-512).
+    Chỉ nhân viên <strong>{{ session.hoten }}</strong> mới có thể giải mã với mật khẩu đúng.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+    <!-- NHẬP ĐIỂM -->
+    <div class="card">
+        <div class="card-header"><h3>✏️ Nhập điểm thi</h3></div>
+        <div class="card-body">
+            <form method="POST" action="/bangdiem/nhap">
+                <div class="form-group">
+                    <label>SINH VIÊN *</label>
+                    <select name="masv" required>
+                        <option value="">-- Chọn sinh viên --</option>
+                        {% for sv in sv_list %}
+                        <option value="{{ sv.MASV }}">{{ sv.MASV }} - {{ sv.HOTEN }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>HỌC PHẦN *</label>
+                    <select name="mahp" required>
+                        <option value="">-- Chọn học phần --</option>
+                        {% for hp in hocphan_list %}
+                        <option value="{{ hp.MAHP }}">{{ hp.MAHP }} - {{ hp.TENHP }} ({{ hp.SOTC }} TC)</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>ĐIỂM THI (0–10) *</label>
+                    <input type="number" name="diemthi" min="0" max="10" step="0.1" required placeholder="VD: 8.5">
+                </div>
+                <div style="margin-top: 6px; padding: 10px 14px; background:#fff3e0; border-radius:8px; font-size:.78rem; color:#e65100; margin-bottom:12px;">
+                    <i class="fa fa-info-circle"></i> Điểm sẽ được mã hóa bằng Public Key <strong>{{ session.pubkey }}</strong>
+                </div>
+                <button type="submit" class="btn btn-success" style="width:100%">
+                    <i class="fa fa-lock"></i> Lưu điểm (có mã hóa)
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- XEM ĐIỂM -->
+    <div class="card">
+        <div class="card-header"><h3>🔍 Xem điểm sinh viên</h3></div>
+        <div class="card-body">
+            <form method="GET">
+                <div class="form-group">
+                    <label>CHỌN SINH VIÊN</label>
+                    <select name="masv" onchange="this.form.submit()">
+                        <option value="">-- Chọn sinh viên --</option>
+                        {% for sv in sv_list %}
+                        <option value="{{ sv.MASV }}" {{ 'selected' if sv.MASV == masv_selected }}>
+                            {{ sv.MASV }} - {{ sv.HOTEN }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+            {% if diem_list %}
+            <div class="table-wrap" style="margin-top: 14px;">
+                <table>
+                    <thead>
+                        <tr><th>MÃ HP</th><th>TÊN HỌC PHẦN</th><th>ĐIỂM</th></tr>
+                    </thead>
+                    <tbody>
+                    {% for d in diem_list %}
+                    <tr>
+                        <td><span class="tag tag-blue">{{ d.MAHP }}</span></td>
+                        <td>{{ d.TENHP }}</td>
+                        <td>
+                            {% if d.DIEMTHI %}
+                            <strong style="color: {% if d.DIEMTHI|float >= 8 %}#2e7d32{% elif d.DIEMTHI|float >= 5 %}#e65100{% else %}#c62828{% endif %}">
+                                {{ d.DIEMTHI }}
+                            </strong>
+                            {% else %}
+                            <span style="color:#aaa">Không giải mã được</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% elif masv_selected %}
+            <p style="color:#aaa; text-align:center; padding: 20px; font-size:.875rem">Sinh viên chưa có điểm.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

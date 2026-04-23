@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="security-info">
+    <i class="fa fa-shield-alt"></i>
+    <p>
+        <strong>Hệ thống mã hóa đang hoạt động.</strong>
+        Dữ liệu lương được mã hóa bằng <strong>RSA-512</strong> với Public Key riêng của từng nhân viên.
+        Điểm thi sinh viên được mã hóa bằng <strong>Public Key</strong> của nhân viên đang đăng nhập.
+        Mật khẩu mã hóa một chiều bằng <strong>SHA1</strong>.
+    </p>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #1a237e;"><i class="fa fa-id-badge"></i></div>
+        <div>
+            <div class="stat-label">Nhân viên</div>
+            <div class="stat-value">{{ session.manv }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #00bcd4;"><i class="fa fa-key"></i></div>
+        <div>
+            <div class="stat-label">Public Key</div>
+            <div class="stat-value" style="font-size:1.1rem">{{ session.pubkey }}</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #43a047;"><i class="fa fa-lock"></i></div>
+        <div>
+            <div class="stat-label">Thuật toán</div>
+            <div class="stat-value" style="font-size:1rem">RSA-512</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon" style="background: #fb8c00;"><i class="fa fa-user-circle"></i></div>
+        <div>
+            <div class="stat-label">Họ tên</div>
+            <div class="stat-value" style="font-size:.95rem">{{ session.hoten }}</div>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+    <div class="card">
+        <div class="card-header"><h3>📋 Chức năng hệ thống</h3></div>
+        <div class="card-body">
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <a href="/lop" class="btn btn-primary">
+                    <i class="fa fa-chalkboard"></i> Quản lý Lớp học
+                </a>
+                <a href="/sinhvien" class="btn btn-accent">
+                    <i class="fa fa-user-graduate"></i> Quản lý Sinh viên
+                </a>
+                <a href="/bangdiem" class="btn btn-success">
+                    <i class="fa fa-table"></i> Nhập & Xem Bảng điểm
+                </a>
+                <a href="/nhanvien" class="btn btn-outline">
+                    <i class="fa fa-id-badge"></i> Thông tin cá nhân (Lương)
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><h3>🔐 Cơ chế mã hóa</h3></div>
+        <div class="card-body" style="font-size: .875rem; line-height: 1.8; color: #444;">
+            <p>📌 <strong>MATKHAU (Nhân viên & SV):</strong> Hash một chiều <span class="tag tag-blue">SHA1</span></p>
+            <br>
+            <p>📌 <strong>LUONG:</strong> Mã hóa đối xứng bằng <span class="tag tag-green">RSA-512</span></p>
+            <p style="margin-left: 20px; font-size: .8rem; color: #666;">
+                → Asymmetric Key tên = MANV<br>
+                → Chỉ nhân viên đó mới giải mã được bằng Private Key + Password
+            </p>
+            <br>
+            <p>📌 <strong>DIEMTHI:</strong> Mã hóa bằng <span class="tag tag-lock">Public Key NV</span></p>
+            <p style="margin-left: 20px; font-size: .8rem; color: #666;">
+                → EncryptByAsymKey với Public Key của NV đang nhập điểm<br>
+                → Giải mã cần Private Key + Password của NV đó
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

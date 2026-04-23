@@ -1,0 +1,94 @@
+-- ============================================================
+-- BÀI THỰC HÀNH SỐ 3 - Mã hóa dữ liệu với RSA (Public Key)
+-- Script 1: Tạo Database và các Table
+-- ============================================================
+
+-- Tạo Database
+IF NOT EXISTS (SELECT name FROM sys.databases WHERE name = N'QLSVNhom')
+BEGIN
+    CREATE DATABASE QLSVNhom;
+END
+GO
+
+USE QLSVNhom;
+GO
+
+-- ============================================================
+-- TẠO CÁC TABLE
+-- ============================================================
+
+-- 1. Bảng SINHVIEN
+IF OBJECT_ID('SINHVIEN', 'U') IS NOT NULL DROP TABLE SINHVIEN;
+CREATE TABLE SINHVIEN (
+    MASV        NVARCHAR(20)    NOT NULL PRIMARY KEY,
+    HOTEN       NVARCHAR(100)   NOT NULL,
+    NGAYSINH    DATETIME,
+    DIACHI      NVARCHAR(200),
+    MALOP       VARCHAR(20),
+    TENDN       NVARCHAR(100)   NOT NULL UNIQUE,
+    MATKHAU     VARBINARY(MAX)  NOT NULL
+);
+GO
+
+-- 2. Bảng NHANVIEN
+IF OBJECT_ID('NHANVIEN', 'U') IS NOT NULL DROP TABLE NHANVIEN;
+CREATE TABLE NHANVIEN (
+    MANV        VARCHAR(20)     NOT NULL PRIMARY KEY,
+    HOTEN       NVARCHAR(100)   NOT NULL,
+    EMAIL       VARCHAR(100),
+    LUONG       VARBINARY(MAX),
+    TENDN       NVARCHAR(100)   NOT NULL UNIQUE,
+    MATKHAU     VARBINARY(MAX)  NOT NULL,
+    PUBKEY      VARCHAR(20)
+);
+GO
+
+-- 3. Bảng LOP
+IF OBJECT_ID('LOP', 'U') IS NOT NULL DROP TABLE LOP;
+CREATE TABLE LOP (
+    MALOP       VARCHAR(20)     NOT NULL PRIMARY KEY,
+    TENLOP      NVARCHAR(100)   NOT NULL,
+    MANV        VARCHAR(20)
+);
+GO
+
+-- 4. Bảng HOCPHAN
+IF OBJECT_ID('HOCPHAN', 'U') IS NOT NULL DROP TABLE HOCPHAN;
+CREATE TABLE HOCPHAN (
+    MAHP        VARCHAR(20)     NOT NULL PRIMARY KEY,
+    TENHP       NVARCHAR(100)   NOT NULL,
+    SOTC        INT
+);
+GO
+
+-- 5. Bảng BANGDIEM
+IF OBJECT_ID('BANGDIEM', 'U') IS NOT NULL DROP TABLE BANGDIEM;
+CREATE TABLE BANGDIEM (
+    MASV        NVARCHAR(20)     NOT NULL,
+    MAHP        VARCHAR(20)     NOT NULL,
+    DIEMTHI     VARBINARY(MAX),
+    PRIMARY KEY (MASV, MAHP)
+);
+GO
+
+-- ============================================================
+-- FOREIGN KEYS
+-- ============================================================
+ALTER TABLE LOP
+    ADD CONSTRAINT FK_LOP_NHANVIEN FOREIGN KEY (MANV) REFERENCES NHANVIEN(MANV);
+GO
+
+ALTER TABLE SINHVIEN
+    ADD CONSTRAINT FK_SINHVIEN_LOP FOREIGN KEY (MALOP) REFERENCES LOP(MALOP);
+GO
+
+ALTER TABLE BANGDIEM
+    ADD CONSTRAINT FK_BANGDIEM_SINHVIEN FOREIGN KEY (MASV) REFERENCES SINHVIEN(MASV);
+GO
+
+ALTER TABLE BANGDIEM
+    ADD CONSTRAINT FK_BANGDIEM_HOCPHAN FOREIGN KEY (MAHP) REFERENCES HOCPHAN(MAHP);
+GO
+
+PRINT N'✔ Tạo Database QLSVNhom và các bảng thành công!';
+GO
