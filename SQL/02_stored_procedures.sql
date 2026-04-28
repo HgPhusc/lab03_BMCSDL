@@ -6,6 +6,12 @@
 USE QLSVNhom;
 GO
 
+DELETE FROM BANGDIEM; DELETE FROM SINHVIEN; DELETE FROM LOP; DELETE FROM NHANVIEN;
+IF EXISTS (SELECT * FROM sys.asymmetric_keys WHERE name = 'NV01') DROP ASYMMETRIC KEY [NV01];
+IF EXISTS (SELECT * FROM sys.asymmetric_keys WHERE name = 'NV02') DROP ASYMMETRIC KEY [NV02];
+IF EXISTS (SELECT * FROM sys.asymmetric_keys WHERE name = 'NV03') DROP ASYMMETRIC KEY [NV03];
+GO
+
 -- ============================================================
 -- TẠO DATABASE MASTER KEY (bắt buộc trước khi tạo asymmetric key)
 -- ============================================================
@@ -46,10 +52,9 @@ BEGIN
     SET NOCOUNT ON;
 
     DECLARE @SQL        NVARCHAR(MAX);
-    DECLARE @KeyName    VARCHAR(20) = @MANV;   -- Tên khóa = MANV
+    DECLARE @KeyName    VARCHAR(20) = @MANV;
     DECLARE @KeyExists  INT = 0;
 
-    -- Kiểm tra nhân viên đã tồn tại chưa
     IF EXISTS (SELECT 1 FROM NHANVIEN WHERE MANV = @MANV)
     BEGIN
         RAISERROR(N'Nhân viên với MANV = %s đã tồn tại!', 16, 1, @MANV);
@@ -62,42 +67,32 @@ BEGIN
         RETURN;
     END
 
-    -- Kiểm tra Asymmetric Key đã tồn tại chưa
     IF EXISTS (SELECT * FROM sys.asymmetric_keys WHERE name = @KeyName)
-    BEGIN
         SET @KeyExists = 1;
-    END
 
-    -- Tạo Asymmetric Key (RSA_512) nếu chưa có
-    -- Tên key = MANV, bảo vệ bằng PASSWORD = @MK
     IF @KeyExists = 0
     BEGIN
         SET @SQL = N'CREATE ASYMMETRIC KEY ' + QUOTENAME(@KeyName) + 
-                   N' WITH ALGORITHM = RSA_512 ENCRYPTION BY PASSWORD = ' + 
+                   N' WITH ALGORITHM = RSA_2048 ENCRYPTION BY PASSWORD = ' + 
                    QUOTENAME(@MK, '''') + N';';
         EXEC sp_executesql @SQL;
     END
 
-    -- Mã hóa LUONG bằng Public Key của Asymmetric Key
-    DECLARE @LuongBinary    VARBINARY(MAX);
-    DECLARE @LuongText      NVARCHAR(50) = CAST(@LUONGCB AS NVARCHAR(50));
+    DECLARE @LuongBinary VARBINARY(MAX);
+    -- ✅ Dùng CONVERT sang VARCHAR (không phải NVARCHAR) để tránh lỗi encoding
+    DECLARE @LuongText VARCHAR(50) = CONVERT(VARCHAR(50), @LUONGCB);
 
     SET @SQL = N'SELECT @Result = EncryptByAsymKey(AsymKey_ID(' + 
-               QUOTENAME(@KeyName, '''') + N'), CAST(' +
-               QUOTENAME(@LuongText, '''') + N' AS VARBINARY(MAX)));';
+               QUOTENAME(@KeyName, '''') + N'), CONVERT(VARBINARY(MAX), ' +
+               QUOTENAME(@LuongText, '''') + N'));';
 
     EXEC sp_executesql @SQL, N'@Result VARBINARY(MAX) OUTPUT', @Result = @LuongBinary OUTPUT;
 
-    -- Thêm nhân viên vào bảng
     INSERT INTO NHANVIEN (MANV, HOTEN, EMAIL, LUONG, TENDN, MATKHAU, PUBKEY)
     VALUES (
-        @MANV,
-        @HOTEN,
-        @EMAIL,
-        @LuongBinary,
-        @TENDN,
-        HASHBYTES('SHA1', @MK),    -- Mã hóa MATKHAU bằng SHA1
-        @KeyName                    -- PUBKEY = MANV
+        @MANV, @HOTEN, @EMAIL, @LuongBinary, @TENDN,
+        HASHBYTES('SHA1', @MK),
+        @KeyName
     );
 
     PRINT N'✔ Thêm nhân viên ' + @HOTEN + N' thành công!';
@@ -119,11 +114,10 @@ AS
 BEGIN
     SET NOCOUNT ON;
 
-    DECLARE @SQL        NVARCHAR(MAX);
-    DECLARE @MANV       VARCHAR(20);
-    DECLARE @PUBKEY     VARCHAR(20);
+    DECLARE @SQL    NVARCHAR(MAX);
+    DECLARE @MANV   VARCHAR(20);
+    DECLARE @PUBKEY VARCHAR(20);
 
-    -- Xác thực tài khoản (TENDN + SHA1(MK))
     SELECT @MANV = MANV, @PUBKEY = PUBKEY
     FROM NHANVIEN
     WHERE TENDN = @TENDN
@@ -135,19 +129,16 @@ BEGIN
         RETURN;
     END
 
-    -- Truy vấn và giải mã lương sử dụng Private Key (bảo vệ bằng @MK)
-    -- DecryptByAsymKey cần password để mở khóa Private Key
+    -- ✅ CAST sang VARCHAR để ra đúng chuỗi số
     SET @SQL = N'
     SELECT 
-        nv.MANV,
-        nv.HOTEN,
-        nv.EMAIL,
+        nv.MANV, nv.HOTEN, nv.EMAIL,
         CAST(
             DecryptByAsymKey(
                 AsymKey_ID(' + QUOTENAME(@PUBKEY, '''') + N'),
                 nv.LUONG,
                 CAST(' + QUOTENAME(@MK, '''') + N' AS NVARCHAR(128))
-            ) AS NVARCHAR(50)
+            ) AS VARCHAR(50)
         ) AS LUONGCB
     FROM NHANVIEN nv
     WHERE nv.MANV = ' + QUOTENAME(@MANV, '''') + N';';
@@ -384,23 +375,22 @@ CREATE PROCEDURE SP_INS_BANGDIEM
     @MASV       VARCHAR(20),
     @MAHP       VARCHAR(20),
     @DIEMTHI    DECIMAL(5,2),
-    @PUBKEY_NV  VARCHAR(20)    -- Tên Public Key của nhân viên đang đăng nhập
+    @PUBKEY_NV  VARCHAR(20)
 AS
 BEGIN
     SET NOCOUNT ON;
 
     DECLARE @SQL            NVARCHAR(MAX);
     DECLARE @DiemEncrypted  VARBINARY(MAX);
-    DECLARE @DiemStr        NVARCHAR(20) = CAST(@DIEMTHI AS NVARCHAR(20));
+    -- ✅ Dùng VARCHAR thay vì NVARCHAR
+    DECLARE @DiemStr        VARCHAR(20) = CONVERT(VARCHAR(20), @DIEMTHI);
 
-    -- Mã hóa điểm bằng Public Key của nhân viên
     SET @SQL = N'SELECT @Result = EncryptByAsymKey(AsymKey_ID(' + 
                QUOTENAME(@PUBKEY_NV, '''') + N'), 
-               CAST(' + QUOTENAME(@DiemStr, '''') + N' AS VARBINARY(MAX)));';
+               CONVERT(VARBINARY(MAX), ' + QUOTENAME(@DiemStr, '''') + N'));';
 
     EXEC sp_executesql @SQL, N'@Result VARBINARY(MAX) OUTPUT', @Result = @DiemEncrypted OUTPUT;
 
-    -- Thêm hoặc cập nhật bảng điểm
     IF EXISTS (SELECT 1 FROM BANGDIEM WHERE MASV = @MASV AND MAHP = @MAHP)
         UPDATE BANGDIEM SET DIEMTHI = @DiemEncrypted
         WHERE MASV = @MASV AND MAHP = @MAHP;
@@ -427,6 +417,7 @@ BEGIN
 
     DECLARE @SQL NVARCHAR(MAX);
 
+    -- ✅ CAST sang VARCHAR để ra đúng số điểm
     SET @SQL = N'
     SELECT 
         bd.MASV,
@@ -438,7 +429,7 @@ BEGIN
                 AsymKey_ID(' + QUOTENAME(@PUBKEY_NV, '''') + N'),
                 bd.DIEMTHI,
                 CAST(' + QUOTENAME(@MK, '''') + N' AS NVARCHAR(128))
-            ) AS NVARCHAR(20)
+            ) AS VARCHAR(20)
         ) AS DIEMTHI
     FROM BANGDIEM bd
     JOIN SINHVIEN sv ON bd.MASV = sv.MASV
@@ -479,3 +470,4 @@ GO
 
 PRINT N'✔ Tạo tất cả Stored Procedures thành công!';
 GO
+
